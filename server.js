@@ -2,28 +2,33 @@
 const dotenv = require('dotenv');
 dotenv.config({ path: "./config.env" });
 
-const express = require('express');
+const app = require('./app');
 const mongoose = require('mongoose');
-const authRoutes = require('./routes/userRoutes');
 
-const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Database connection
+const DB = process.env.MONGODB_URI;
 
-// Connect to MongoDB
-console.log("MongoDB URI:", process.env.MONGODB_URI);
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
-
-// Routes
-app.use('/api/v1/', authRoutes);
-// Error handling
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Server error!' });
-});
+mongoose.connect(DB)
+  .then(() => console.log('✅ Connected to MongoDB'))
+  .catch(err => console.error('❌ MongoDB connection error:', err));
 
 const PORT = process.env.PORT || 5000;
-console.log("PORT:", PORT);
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const server = app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
+
+
+process.on('unhandledRejection', (err) => {
+  console.error('❌ Unhandled Rejection:', err.name, err.message);
+  server.close(() => {
+    process.exit(1);
+  });
+});
+
+
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception:', err.name, err.message);
+  server.close(() => {
+    process.exit(1);
+  });
+});
